@@ -1,13 +1,13 @@
--- gui
+-- Initializing GUI
 local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
 ScreenGui.Name = "DandyAutofarmGui"
 
--- sc
+-- Skillcheck Bypass
 game.ReplicatedStorage.Events.SkillcheckUpdate.OnClientInvoke = function()
     return "supercomplete"
 end
 
--- safe zone
+-- Safe Zone Platform
 local SafeZonePart = Instance.new("Part", workspace)
 SafeZonePart.Size = Vector3.new(20, 1, 20)
 SafeZonePart.Position = Vector3.new(5000, 5000, 5000)
@@ -62,7 +62,9 @@ local LocalPlayer = game.Players.LocalPlayer
 
 local function Log(msg) StatusLog.Text = tostring(msg) end
 
--- look at my new twisteds ignore razzle dazzle (check twists nearby)
+-- ignore
+local IgnoreList = {["RazzleDazzleMonster"] = true, ["SquirmMonster"] = true}
+
 local function IsDangerNear(pos)
     local room = workspace:FindFirstChild("CurrentRoom")
     if not room then return false end
@@ -70,8 +72,8 @@ local function IsDangerNear(pos)
         local mFolder = map:FindFirstChild("Monsters")
         if mFolder then
             for _, m in pairs(mFolder:GetChildren()) do
-                -- Ignore RazzleDazzleMonster
-                if m.Name ~= "RazzleDazzleMonster" and m:FindFirstChild("HumanoidRootPart") and (m.HumanoidRootPart.Position - pos).Magnitude < 40 then
+                -- ignore twisteds or sum squirm razzle
+                if not IgnoreList[m.Name] and m:FindFirstChild("HumanoidRootPart") and (m.HumanoidRootPart.Position - pos).Magnitude < 40 then
                     return true
                 end
             end
@@ -112,8 +114,8 @@ local function IsBeingChased()
         local mFolder = map:FindFirstChild("Monsters")
         if mFolder then
             for _, m in pairs(mFolder:GetChildren()) do
-                -- ignore razzledazzle teehehehe
-                if m.Name ~= "RazzleDazzleMonster" then
+                -- Ignore specific monsters for chase checks
+                if not IgnoreList[m.Name] then
                     local cv = m:FindFirstChild("ChasingValue")
                     if cv and (cv.Value == LocalPlayer.Name or (cv:IsA("ObjectValue") and cv.Value and cv.Value.Name == LocalPlayer.Name)) then
                         return true
@@ -161,7 +163,7 @@ local function RunAutoFarm()
                 repeat task.wait(0.2) until not IsBeingChased()
                 task.wait(5)
             elseif Info and Info:FindFirstChild("Panic") and Info.Panic.Value == true then
-                Log("Panic! To elevator...")
+                Log("Panic! To elevator we go...")
                 local elev = workspace:FindFirstChild("Elevators") and workspace.Elevators:FindFirstChild("Elevator")
                 if elev and elev:FindFirstChild("Base") then SafeTeleport(elev.Base.CFrame) end
             elseif Room then
