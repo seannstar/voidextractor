@@ -1,6 +1,18 @@
+game.ReplicatedStorage.Events.SkillcheckUpdate.OnClientInvoke = function()
+  return "supercomplete"
+
 -- Initializing GUI
 local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
 ScreenGui.Name = "DandyAutofarmGui"
+
+-- ADDED: Safe Zone Platform to prevent falling
+local SafeZonePart = Instance.new("Part", workspace)
+SafeZonePart.Size = Vector3.new(20, 1, 20)
+SafeZonePart.Position = Vector3.new(5000, 5000, 5000)
+SafeZonePart.Anchored = true
+SafeZonePart.Transparency = 0.5
+SafeZonePart.Name = "SafeZonePlatform"
+local SafeZonePos = CFrame.new(5000, 5000.6, 5000)
 
 local Frame = Instance.new("Frame", ScreenGui)
 Frame.Size = UDim2.new(0, 250, 0, 260)
@@ -45,9 +57,25 @@ StatusLog.BackgroundTransparency = 1
 
 local Enabled = false
 local LocalPlayer = game.Players.LocalPlayer
-local SafeZone = CFrame.new(5000, 5000, 5000)
 
 local function Log(msg) StatusLog.Text = tostring(msg) end
+
+-- ADDED: Monster Proximity Check
+local function IsDangerNear(pos)
+    local room = workspace:FindFirstChild("CurrentRoom")
+    if not room then return false end
+    for _, map in pairs(room:GetChildren()) do
+        local mFolder = map:FindFirstChild("Monsters")
+        if mFolder then
+            for _, m in pairs(mFolder:GetChildren()) do
+                if m:FindFirstChild("HumanoidRootPart") and (m.HumanoidRootPart.Position - pos).Magnitude < 40 then
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
 
 -- Sprint Loop
 task.spawn(function()
@@ -66,23 +94,24 @@ local function AbortExtractions()
     for _, map in pairs(room:GetChildren()) do
         local gens = map:FindFirstChild("Generators")
         if gens then
-            for _, gen in pairs(gens:GetChildren()) do
-                local stopRemote = gen:FindFirstChild("Stats") and gen.Stats:FindFirstChild("StopInteracting")
+            for _, gen in gens:GetChildren() do
+                local stats = gen:FindFirstChild("Stats")
+                local stopRemote = stats and stats:FindFirstChild("StopInteracting")
                 if stopRemote then stopRemote:FireServer("Stop") end
             end
         end
     end
 end
 
--- Checks if any monster is within 30 studs of a position
-local function IsDangerNear(pos)
+local function IsBeingChased()
     local room = workspace:FindFirstChild("CurrentRoom")
     if not room then return false end
     for _, map in pairs(room:GetChildren()) do
         local mFolder = map:FindFirstChild("Monsters")
         if mFolder then
             for _, m in pairs(mFolder:GetChildren()) do
-                if m:FindFirstChild("HumanoidRootPart") and (m.HumanoidRootPart.Position - pos).Magnitude < 30 then
+                local cv = m:FindFirstChild("ChasingValue")
+                if cv and (cv.Value == LocalPlayer.Name or (cv:IsA("ObjectValue") and cv.Value and cv.Value.Name == LocalPlayer.Name)) then
                     return true
                 end
             end
@@ -101,58 +130,81 @@ local function RunAutoFarm()
     task.spawn(function()
         while Enabled do
             local Room = workspace:FindFirstChild("CurrentRoom")
+            local Info = workspace:FindFirstChild("Info")
+            FloorLabel.Text = "Floor: " .. (Info and Info:FindFirstChild("Floor") and Info.Floor.Value or "?")
             
-            -- Priority: Monsters
-            local isChased = false
+            -- UI Update
+            for _, child in pairs(ListContainer:GetChildren()) do if not child:IsA("UIListLayout") then child:Destroy() end end
             if Room then
                 for _, map in pairs(Room:GetChildren()) do
                     local mFolder = map:FindFirstChild("Monsters")
                     if mFolder then
                         for _, m in pairs(mFolder:GetChildren()) do
-                            local cv = m:FindFirstChild("ChasingValue")
-                            if cv and (cv.Value == LocalPlayer.Name or (cv:IsA("ObjectValue") and cv.Value and cv.Value.Name == LocalPlayer.Name)) then
-                                isChased = true
-                            end
+                            local l = Instance.new("TextLabel", ListContainer)
+                            l.Text = m.Name
+                            l.TextColor3 = Color3.new(1, 0, 0)
+                            l.BackgroundTransparency = 1
+                            l.Size = UDim2.new(1, 0, 0, 15)
                         end
                     end
                 end
             end
 
-            if isChased then
+            -- Priority Logic
+            if IsBeingChased() then
                 Log("SPOTTED! Hiding...")
                 AbortExtractions()
-                SafeTeleport(SafeZone)
-                repeat task.wait(0.2) until not isChased
+                SafeTeleport(SafeZonePos)
+                repeat task.wait(0.2) until not IsBeingChased()
                 task.wait(5)
+            elseif Info and Info:FindFirstChild("Panic") and Info.Panic.Value == true then
+                Log("Panic! To elevator...")
+                local elev = workspace:FindFirstChild("Elevators") and workspace.Elevators:FindFirstChild("Elevator")
+                if elev and elev:FindFirstChild("Base") then SafeTeleport(elev.Base.CFrame) end
             elseif Room then
-                local gen = nil
-                -- Scan for generator with no nearby monsters
+                local collected = false
                 for _, map in pairs(Room:GetChildren()) do
-                    local gens = map:FindFirstChild("Generators")
-                    if gens then
-                        for _, g in pairs(gens:GetChildren()) do
-                            local p = g:FindFirstChildWhichIsA("ProximityPrompt", true)
-                            if p and p.Enabled and not IsDangerNear(g:GetPivot().Position) then
-                                gen = g break 
+                    local items = map:FindFirstChild("Items")
+                    if items then
+                        for _, item in pairs(items:GetChildren()) do
+                            if item.Name == "ResearchCapsule" then
+                                local p = item:FindFirstChildWhichIsA("ProximityPrompt", true)
+                                if p then
+                                    p.HoldDuration = 0
+                                    SafeTeleport(item:GetPivot() + Vector3.new(0, 1, 0))
+                                    fireproximityprompt(p)
+                                    Log("Collecting Capsule...")
+                                    collected = true
+                                end
                             end
                         end
                     end
                 end
 
-                if gen then
-                    Log("Extracting...")
-                    SafeTeleport(gen:GetPivot())
-                    fireproximityprompt(gen:FindFirstChildWhichIsA("ProximityPrompt", true))
-                    task.wait(2) -- Allow some extraction time
-                    AbortExtractions() -- Stop after burst
-                    Log("Returning to Safe Zone...")
-                    SafeTeleport(SafeZone)
-                    task.wait(2)
-                else
-                    Log("Scanning/Danger near all machines...")
+                if not collected then
+                    local gen = nil
+                    for _, map in pairs(Room:GetChildren()) do
+                        local gens = map:FindFirstChild("Generators")
+                        if gens then
+                            for _, g in pairs(gens:GetChildren()) do
+                                -- ADDED: Check if monster is near the generator
+                                local p = g:FindFirstChildWhichIsA("ProximityPrompt", true)
+                                if p and p.Enabled and not IsDangerNear(g:GetPivot().Position) then
+                                    gen = g break 
+                                end
+                            end
+                        end
+                    end
+                    if gen then
+                        SafeTeleport(gen:GetPivot())
+                        fireproximityprompt(gen:FindFirstChildWhichIsA("ProximityPrompt", true))
+                        Log("Extracting...")
+                    else
+                        Log("Scanning...")
+                    end
                 end
             end
-            task.wait(0.5)
+            task.wait(0.2)
         end
     end)
 end
