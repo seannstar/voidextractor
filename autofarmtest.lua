@@ -101,7 +101,7 @@ local function GetSpecialPhrase()
     local charName = (playerFolder and playerFolder:FindFirstChild("Config") and playerFolder.Config:FindFirstChild("CharacterName")) and playerFolder.Config.CharacterName.Value or "Unknown"
     local t1 = (playerFolder and playerFolder:FindFirstChild("Trinkets") and playerFolder.Trinkets:FindFirstChild("Trinket1")) and FormatTrinket(playerFolder.Trinkets.Trinket1.Value) or "Nothing"
     local t2 = (playerFolder and playerFolder:FindFirstChild("Trinkets") and playerFolder.Trinkets:FindFirstChild("Trinket2")) and FormatTrinket(playerFolder.Trinkets.Trinket2.Value) or "Nothing"
-    return "never thought i'd see a " .. charName .. " with " .. t1 .. " and " .. t2
+    return "never thought i'd see a " .. charName .. " with " .. t1 .. " and " .. t2 "using my autofarm.. oh well!"
 end
 
 local function GetRandomMonster()
