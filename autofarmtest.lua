@@ -92,16 +92,18 @@ local IgnoreList = {
 
 -- Cycler Logic
 local function FormatTrinket(val)
-    if val == "VeeRemote" then return "Vee's Remote" end
-    return val:gsub("(%u)", " %1"):gsub("^%s+", "")
+    if val == "VeeRemote" then return "vee's remote" end
+    return val:gsub("(%u)", " %1"):gsub("^%s+", ""):lower()
 end
 
 local function GetSpecialPhrase()
     local playerFolder = workspace:FindFirstChild("InGamePlayers") and workspace.InGamePlayers:FindFirstChild(LocalPlayer.Name)
-    local charName = (playerFolder and playerFolder:FindFirstChild("Config") and playerFolder.Config:FindFirstChild("CharacterName")) and playerFolder.Config.CharacterName.Value or "Unknown"
-    local t1 = (playerFolder and playerFolder:FindFirstChild("Trinkets") and playerFolder.Trinkets:FindFirstChild("Trinket1")) and FormatTrinket(playerFolder.Trinkets.Trinket1.Value) or "Nothing"
-    local t2 = (playerFolder and playerFolder:FindFirstChild("Trinkets") and playerFolder.Trinkets:FindFirstChild("Trinket2")) and FormatTrinket(playerFolder.Trinkets.Trinket2.Value) or "Nothing"
-    return "never thought i'd see a " .. charName .. " with " .. t1 .. " and " .. t2 "using my autofarm.. oh well!"
+    local charName = (playerFolder and playerFolder:FindFirstChild("Config") and playerFolder.Config:FindFirstChild("CharacterName")) and playerFolder.Config.CharacterName.Value or "unknown"
+    local t1 = (playerFolder and playerFolder:FindFirstChild("Trinkets") and playerFolder.Trinkets:FindFirstChild("Trinket1")) and FormatTrinket(playerFolder.Trinkets.Trinket1.Value) or "nothing"
+    local t2 = (playerFolder and playerFolder:FindFirstChild("Trinkets") and playerFolder.Trinkets:FindFirstChild("Trinket2")) and FormatTrinket(playerFolder.Trinkets.Trinket2.Value) or "nothing"
+    
+    local formattedChar = charName:gsub("(%u)", " %1"):gsub("^%s+", ""):lower()
+    return "never thought i'd see a " .. formattedChar .. " with " .. t1 .. " and " .. t2 .. " using my autofarm.. oh well!"
 end
 
 local function GetRandomMonster()
@@ -112,7 +114,6 @@ local function GetRandomMonster()
             local mFolder = map:FindFirstChild("Monsters")
             if mFolder then
                 for _, m in pairs(mFolder:GetChildren()) do
-                    -- Removed "Monster" and added space
                     local cleanName = m.Name:gsub("Monster", "")
                     table.insert(monsters, cleanName)
                 end
@@ -139,7 +140,7 @@ task.spawn(function()
     end
 end)
 
--- Existing Autofarm Functions
+-- Autofarm Functions
 local function IsDangerNear(pos)
     local room = workspace:FindFirstChild("CurrentRoom")
     if not room then return false end
@@ -244,4 +245,50 @@ local function RunAutoFarm()
                 for _, map in pairs(Room:GetChildren()) do
                     local items = map:FindFirstChild("Items")
                     if items then
-                        for _, item in pairs(items:GetChildren())
+                        for _, item in pairs(items:GetChildren()) do
+                            if item.Name == "ResearchCapsule" then
+                                local p = item:FindFirstChildWhichIsA("ProximityPrompt", true)
+                                if p then
+                                    p.HoldDuration = 0
+                                    SafeTeleport(item:GetPivot() + Vector3.new(0, 1, 0))
+                                    fireproximityprompt(p)
+                                    Log("Collecting Capsule...")
+                                    collected = true
+                                end
+                            end
+                        end
+                    end
+                end
+                
+                if not collected then
+                    local gen = nil
+                    for _, map in pairs(Room:GetChildren()) do
+                        local gens = map:FindFirstChild("Generators")
+                        if gens then
+                            for _, g in pairs(gens:GetChildren()) do
+                                local p = g:FindFirstChildWhichIsA("ProximityPrompt", true)
+                                if p and p.Enabled and not IsDangerNear(g:GetPivot().Position) then
+                                    gen = g break 
+                                end
+                            end
+                        end
+                    end
+                    if gen then
+                        SafeTeleport(gen:GetPivot())
+                        fireproximityprompt(gen:FindFirstChildWhichIsA("ProximityPrompt", true))
+                        Log("Extracting...")
+                    else
+                        Log("Scanning...")
+                    end
+                end
+            end
+            task.wait(0.2)
+        end
+    end)
+end
+
+Toggle.MouseButton1Click:Connect(function()
+    Enabled = not Enabled
+    Toggle.Text = Enabled and "Autofarm: ON" or "Autofarm: OFF"
+    if Enabled then RunAutoFarm() end
+end)
