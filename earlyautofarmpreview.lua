@@ -1,11 +1,13 @@
-game.ReplicatedStorage.Events.SkillcheckUpdate.OnClientInvoke = function()
-  return "supercomplete"
-
 -- Initializing GUI
 local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
 ScreenGui.Name = "DandyAutofarmGui"
 
--- ADDED: Safe Zone Platform to prevent falling
+-- Added: Skillcheck Bypass
+game.ReplicatedStorage.Events.SkillcheckUpdate.OnClientInvoke = function()
+    return "supercomplete"
+end
+
+-- Safe Zone Platform
 local SafeZonePart = Instance.new("Part", workspace)
 SafeZonePart.Size = Vector3.new(20, 1, 20)
 SafeZonePart.Position = Vector3.new(5000, 5000, 5000)
@@ -60,7 +62,6 @@ local LocalPlayer = game.Players.LocalPlayer
 
 local function Log(msg) StatusLog.Text = tostring(msg) end
 
--- ADDED: Monster Proximity Check
 local function IsDangerNear(pos)
     local room = workspace:FindFirstChild("CurrentRoom")
     if not room then return false end
@@ -77,7 +78,6 @@ local function IsDangerNear(pos)
     return false
 end
 
--- Sprint Loop
 task.spawn(function()
     while true do
         if Enabled then
@@ -133,7 +133,6 @@ local function RunAutoFarm()
             local Info = workspace:FindFirstChild("Info")
             FloorLabel.Text = "Floor: " .. (Info and Info:FindFirstChild("Floor") and Info.Floor.Value or "?")
             
-            -- UI Update
             for _, child in pairs(ListContainer:GetChildren()) do if not child:IsA("UIListLayout") then child:Destroy() end end
             if Room then
                 for _, map in pairs(Room:GetChildren()) do
@@ -150,7 +149,6 @@ local function RunAutoFarm()
                 end
             end
 
-            -- Priority Logic
             if IsBeingChased() then
                 Log("SPOTTED! Hiding...")
                 AbortExtractions()
@@ -187,7 +185,6 @@ local function RunAutoFarm()
                         local gens = map:FindFirstChild("Generators")
                         if gens then
                             for _, g in pairs(gens:GetChildren()) do
-                                -- ADDED: Check if monster is near the generator
                                 local p = g:FindFirstChildWhichIsA("ProximityPrompt", true)
                                 if p and p.Enabled and not IsDangerNear(g:GetPivot().Position) then
                                     gen = g break 
