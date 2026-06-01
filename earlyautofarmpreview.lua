@@ -24,35 +24,47 @@ Frame.BackgroundTransparency = 0.2
 Frame.Active, Frame.Draggable = true, true
 Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 12)
 
+-- Updated Title
 local Title = Instance.new("TextLabel", Frame)
 Title.Size = UDim2.new(1, 0, 0, 25)
-Title.Text = "Dandy’s World Autofarm V1 - made by seann"
+Title.Position = UDim2.new(0, 0, 0, 5)
+Title.Text = "Dandy’s World Autofarm V2 - made by seann"
 Title.TextColor3 = Color3.new(1,1,1)
 Title.BackgroundTransparency = 1
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 10
 
+-- Added Subtitle
+local Subtitle = Instance.new("TextLabel", Frame)
+Subtitle.Size = UDim2.new(1, 0, 0, 15)
+Subtitle.Position = UDim2.new(0, 0, 0, 20)
+Subtitle.Text = "credits to olivia and ali_hhjjj from the bookclub discord server"
+Subtitle.TextColor3 = Color3.fromRGB(150, 150, 150)
+Subtitle.BackgroundTransparency = 1
+Subtitle.Font = Enum.Font.Gotham
+Subtitle.TextSize = 8
+
 local FloorLabel = Instance.new("TextLabel", Frame)
-FloorLabel.Size, FloorLabel.Position = UDim2.new(1, 0, 0, 20), UDim2.new(0, 0, 0, 25)
+FloorLabel.Size, FloorLabel.Position = UDim2.new(1, 0, 0, 20), UDim2.new(0, 0, 0, 35)
 FloorLabel.Text = "Floor: ..."
 FloorLabel.TextColor3 = Color3.new(1,1,1)
 FloorLabel.BackgroundTransparency = 1
 
 local ListContainer = Instance.new("ScrollingFrame", Frame)
-ListContainer.Size, ListContainer.Position = UDim2.new(1, -20, 0, 60), UDim2.new(0, 10, 0, 45)
+ListContainer.Size, ListContainer.Position = UDim2.new(1, -20, 0, 60), UDim2.new(0, 10, 0, 55)
 ListContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 ListContainer.BackgroundTransparency = 0.5
 local UIList = Instance.new("UIListLayout", ListContainer)
 
 local Toggle = Instance.new("TextButton", Frame)
-Toggle.Size, Toggle.Position = UDim2.new(0, 220, 0, 25), UDim2.new(0, 15, 0, 110)
+Toggle.Size, Toggle.Position = UDim2.new(0, 220, 0, 25), UDim2.new(0, 15, 0, 120)
 Toggle.Text = "Autofarm: OFF"
 Toggle.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 Toggle.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner", Toggle).CornerRadius = UDim.new(0, 8)
 
 local StatusLog = Instance.new("TextLabel", Frame)
-StatusLog.Size, StatusLog.Position = UDim2.new(1, -20, 0, 90), UDim2.new(0, 10, 0, 140)
+StatusLog.Size, StatusLog.Position = UDim2.new(1, -20, 0, 90), UDim2.new(0, 10, 0, 150)
 StatusLog.Text = "Status: Idle"
 StatusLog.TextColor3 = Color3.new(1,1,1)
 StatusLog.BackgroundTransparency = 1
@@ -62,8 +74,11 @@ local LocalPlayer = game.Players.LocalPlayer
 
 local function Log(msg) StatusLog.Text = tostring(msg) end
 
--- ignore
-local IgnoreList = {["RazzleDazzleMonster"] = true, ["SquirmMonster"] = true}
+local IgnoreList = {
+    ["RazzleDazzleMonster"] = true, 
+    ["SquirmMonster"] = true,
+    ["RodgerMonster"] = true
+}
 
 local function IsDangerNear(pos)
     local room = workspace:FindFirstChild("CurrentRoom")
@@ -72,7 +87,6 @@ local function IsDangerNear(pos)
         local mFolder = map:FindFirstChild("Monsters")
         if mFolder then
             for _, m in pairs(mFolder:GetChildren()) do
-                -- ignore twisteds or sum squirm razzle
                 if not IgnoreList[m.Name] and m:FindFirstChild("HumanoidRootPart") and (m.HumanoidRootPart.Position - pos).Magnitude < 40 then
                     return true
                 end
@@ -114,7 +128,6 @@ local function IsBeingChased()
         local mFolder = map:FindFirstChild("Monsters")
         if mFolder then
             for _, m in pairs(mFolder:GetChildren()) do
-                -- Ignore specific monsters for chase checks
                 if not IgnoreList[m.Name] then
                     local cv = m:FindFirstChild("ChasingValue")
                     if cv and (cv.Value == LocalPlayer.Name or (cv:IsA("ObjectValue") and cv.Value and cv.Value.Name == LocalPlayer.Name)) then
@@ -163,7 +176,7 @@ local function RunAutoFarm()
                 repeat task.wait(0.2) until not IsBeingChased()
                 task.wait(5)
             elseif Info and Info:FindFirstChild("Panic") and Info.Panic.Value == true then
-                Log("Panic! To elevator we go...")
+                Log("Panic! To elevator...")
                 local elev = workspace:FindFirstChild("Elevators") and workspace.Elevators:FindFirstChild("Elevator")
                 if elev and elev:FindFirstChild("Base") then SafeTeleport(elev.Base.CFrame) end
             elseif Room then
@@ -220,3 +233,5 @@ Toggle.MouseButton1Click:Connect(function()
 end)
 
 loadstring(game:HttpGet("https://raw.githubusercontent.com/alihusam078588-web/Twilight-zone-loader/refs/heads/main/squirm.lua"))()
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/thatONEworldthatihate/afkshit/refs/heads/main/afk.lua"))()
