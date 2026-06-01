@@ -1,13 +1,13 @@
--- Initializing GUI
+-- gui
 local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
 ScreenGui.Name = "DandyAutofarmGui"
 
--- Added: Skillcheck Bypass
+-- sc
 game.ReplicatedStorage.Events.SkillcheckUpdate.OnClientInvoke = function()
     return "supercomplete"
 end
 
--- Safe Zone Platform
+-- safe zone
 local SafeZonePart = Instance.new("Part", workspace)
 SafeZonePart.Size = Vector3.new(20, 1, 20)
 SafeZonePart.Position = Vector3.new(5000, 5000, 5000)
@@ -62,6 +62,7 @@ local LocalPlayer = game.Players.LocalPlayer
 
 local function Log(msg) StatusLog.Text = tostring(msg) end
 
+-- look at my new twisteds ignore razzle dazzle (check twists nearby)
 local function IsDangerNear(pos)
     local room = workspace:FindFirstChild("CurrentRoom")
     if not room then return false end
@@ -69,7 +70,8 @@ local function IsDangerNear(pos)
         local mFolder = map:FindFirstChild("Monsters")
         if mFolder then
             for _, m in pairs(mFolder:GetChildren()) do
-                if m:FindFirstChild("HumanoidRootPart") and (m.HumanoidRootPart.Position - pos).Magnitude < 40 then
+                -- Ignore RazzleDazzleMonster
+                if m.Name ~= "RazzleDazzleMonster" and m:FindFirstChild("HumanoidRootPart") and (m.HumanoidRootPart.Position - pos).Magnitude < 40 then
                     return true
                 end
             end
@@ -110,9 +112,12 @@ local function IsBeingChased()
         local mFolder = map:FindFirstChild("Monsters")
         if mFolder then
             for _, m in pairs(mFolder:GetChildren()) do
-                local cv = m:FindFirstChild("ChasingValue")
-                if cv and (cv.Value == LocalPlayer.Name or (cv:IsA("ObjectValue") and cv.Value and cv.Value.Name == LocalPlayer.Name)) then
-                    return true
+                -- ignore razzledazzle teehehehe
+                if m.Name ~= "RazzleDazzleMonster" then
+                    local cv = m:FindFirstChild("ChasingValue")
+                    if cv and (cv.Value == LocalPlayer.Name or (cv:IsA("ObjectValue") and cv.Value and cv.Value.Name == LocalPlayer.Name)) then
+                        return true
+                    end
                 end
             end
         end
