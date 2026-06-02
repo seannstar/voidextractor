@@ -69,10 +69,29 @@ StatusLog.Text = "Status: Idle"
 StatusLog.TextColor3 = Color3.new(1,1,1)
 StatusLog.BackgroundTransparency = 1
 
+-- Cycler UI
+local CyclerLabel = Instance.new("TextLabel", Frame)
+CyclerLabel.Size = UDim2.new(1, -20, 0, 30)
+CyclerLabel.Position = UDim2.new(0, 10, 0, 220)
+CyclerLabel.BackgroundTransparency = 1
+CyclerLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+CyclerLabel.Font = Enum.Font.Code
+CyclerLabel.TextSize = 9
+CyclerLabel.TextWrapped = true
+
 local Enabled = false
 local LocalPlayer = game.Players.LocalPlayer
 
 local function Log(msg) StatusLog.Text = tostring(msg) end
+
+local SpotterPhrases = {
+    "Looks like we’ve got spotted!\nLet’s hide, shall we?",
+    "Not dealing with THAT twisted.",
+    "Sigh.. we got spotted again.",
+    "Pretty cozy for a safe zone, is it not?\nStay on that platform, yeah?\nThe void isn’t all that welcoming.",
+    "hidehidehidehidehidehide",
+    "You’re safe here."
+}
 
 local IgnoreList = {
     ["RazzleDazzleMonster"] = true, 
@@ -80,6 +99,58 @@ local IgnoreList = {
     ["RodgerMonster"] = true
 }
 
+-- Cycler Logic
+local function FormatTrinket(val)
+    if val == "VeeRemote" then return "vee's remote" end
+    return val:gsub("(%u)", " %1"):gsub("^%s+", ""):lower()
+end
+
+local function GetSpecialPhrase()
+    local playerFolder = workspace:FindFirstChild("InGamePlayers") and workspace.InGamePlayers:FindFirstChild(LocalPlayer.Name)
+    local charName = (playerFolder and playerFolder:FindFirstChild("Config") and playerFolder.Config:FindFirstChild("CharacterName")) and playerFolder.Config.CharacterName.Value or "unknown"
+    local t1 = (playerFolder and playerFolder:FindFirstChild("Trinkets") and playerFolder.Trinkets:FindFirstChild("Trinket1")) and FormatTrinket(playerFolder.Trinkets.Trinket1.Value) or "nothing"
+    local t2 = (playerFolder and playerFolder:FindFirstChild("Trinkets") and playerFolder.Trinkets:FindFirstChild("Trinket2")) and FormatTrinket(playerFolder.Trinkets.Trinket2.Value) or "nothing"
+    
+    local formattedChar = charName:gsub("(%u)", " %1"):gsub("^%s+", ""):lower()
+    return "never thought i'd see a " .. formattedChar .. " with " .. t1 .. " and " .. t2 .. " using my autofarm.. oh well!"
+end
+
+local function GetRandomMonster()
+    local room = workspace:FindFirstChild("CurrentRoom")
+    if room then
+        local monsters = {}
+        for _, map in pairs(room:GetChildren()) do
+            local mFolder = map:FindFirstChild("Monsters")
+            if mFolder then
+                for _, m in pairs(mFolder:GetChildren()) do
+                    local cleanName = m.Name:gsub("Monster", "")
+                    table.insert(monsters, cleanName)
+                end
+            end
+        end
+        if #monsters > 0 then return monsters[math.random(1, #monsters)] end
+    end
+    return "Twisted"
+end
+
+task.spawn(function()
+    while true do
+        local monster = GetRandomMonster()
+        local phrases = {
+            "auto vote card coming in never",
+            "you're gonna encounter twisted dandy a shit ton of times because i never implemented a function to buy from dandy lmao",
+            "don't be disrespectful, go give Twisted " .. monster .. " a big hug.",
+            "i already know the autofarm doesn't pick up heals im gonna implement it eventually ok",
+            "what, can't play the game normally? that's too bad..",
+            "i'm scared.",
+            GetSpecialPhrase()
+        }
+        CyclerLabel.Text = phrases[math.random(1, #phrases)]
+        task.wait(math.random(15, 20))
+    end
+end)
+
+-- Autofarm Functions
 local function IsDangerNear(pos)
     local room = workspace:FindFirstChild("CurrentRoom")
     if not room then return false end
@@ -102,7 +173,7 @@ task.spawn(function()
             local event = game:GetService("ReplicatedStorage"):FindFirstChild("Events") and game.ReplicatedStorage.Events:FindFirstChild("SprintEvent")
             if event then event:FireServer(true) end
         end
-        task.wait(45)
+        task.wait(25)
     end
 end)
 
@@ -149,11 +220,24 @@ end
 local function RunAutoFarm()
     task.spawn(function()
         while Enabled do
+            -- 1. CRITICAL PRIORITY: Escape Logic
+            if IsBeingChased() then
+                Log(SpotterPhrases[math.random(1, #SpotterPhrases)])
+                AbortExtractions()
+                SafeTeleport(CFrame.new(SafeZonePos.Position + Vector3.new(0, 2, 0)))
+                repeat task.wait(0.2) until not IsBeingChased()
+                task.wait(2)
+                continue
+            end
+
+            -- 2. Normal Operations
             local Room = workspace:FindFirstChild("CurrentRoom")
             local Info = workspace:FindFirstChild("Info")
             FloorLabel.Text = "Floor: " .. (Info and Info:FindFirstChild("Floor") and Info.Floor.Value or "?")
             
             for _, child in pairs(ListContainer:GetChildren()) do if not child:IsA("UIListLayout") then child:Destroy() end end
+            
+            local foundMonsters = false
             if Room then
                 for _, map in pairs(Room:GetChildren()) do
                     local mFolder = map:FindFirstChild("Monsters")
@@ -161,22 +245,26 @@ local function RunAutoFarm()
                         for _, m in pairs(mFolder:GetChildren()) do
                             local l = Instance.new("TextLabel", ListContainer)
                             l.Text = m.Name
-                            l.TextColor3 = Color3.new(1, 0, 0)
+                            l.TextColor3 = Color3.fromRGB(255, 100, 100)
                             l.BackgroundTransparency = 1
                             l.Size = UDim2.new(1, 0, 0, 15)
+                            foundMonsters = true
                         end
                     end
                 end
             end
+            
+            if not foundMonsters then
+                local l = Instance.new("TextLabel", ListContainer)
+                l.Text = "There aren’t any twisteds\nin the elevator, silly!"
+                l.TextColor3 = Color3.fromRGB(255, 100, 100)
+                l.BackgroundTransparency = 1
+                l.Size = UDim2.new(1, 0, 0, 30) -- Increased height to accommodate 2 lines
+                l.TextWrapped = true
+            end
 
-            if IsBeingChased() then
-                Log("SPOTTED! Hiding...")
-                AbortExtractions()
-                SafeTeleport(SafeZonePos)
-                repeat task.wait(0.2) until not IsBeingChased()
-                task.wait(5)
-            elseif Info and Info:FindFirstChild("Panic") and Info.Panic.Value == true then
-                Log("Panic! To elevator...")
+            if Info and Info:FindFirstChild("Panic") and Info.Panic.Value == true then
+                Log("It's panic mode!\nTo the elevator we go...")
                 local elev = workspace:FindFirstChild("Elevators") and workspace.Elevators:FindFirstChild("Elevator")
                 if elev and elev:FindFirstChild("Base") then SafeTeleport(elev.Base.CFrame) end
             elseif Room then
@@ -189,16 +277,16 @@ local function RunAutoFarm()
                                 local p = item:FindFirstChildWhichIsA("ProximityPrompt", true)
                                 if p then
                                     p.HoldDuration = 0
-                                    SafeTeleport(item:GetPivot() + Vector3.new(0, 1, 0))
+                                    SafeTeleport(CFrame.new(item:GetPivot().Position + Vector3.new(0, 3, 0)))
                                     fireproximityprompt(p)
-                                    Log("Collecting Capsule...")
+                                    Log("Collecting capsules\nor whatever this shit pmo")
                                     collected = true
                                 end
                             end
                         end
                     end
                 end
-
+                
                 if not collected then
                     local gen = nil
                     for _, map in pairs(Room:GetChildren()) do
@@ -213,11 +301,12 @@ local function RunAutoFarm()
                         end
                     end
                     if gen then
-                        SafeTeleport(gen:GetPivot())
+                        SafeTeleport(CFrame.new(gen:GetPivot().Position + Vector3.new(0, 3, 0)))
+                        task.wait(0.3)
                         fireproximityprompt(gen:FindFirstChildWhichIsA("ProximityPrompt", true))
                         Log("Extracting...")
                     else
-                        Log("Scanning...")
+                        Log("Looking at the horizon\nof generators, be patient.")
                     end
                 end
             end
