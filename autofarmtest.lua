@@ -256,11 +256,11 @@ local function RunAutoFarm()
             
             if not foundMonsters then
                 local l = Instance.new("TextLabel", ListContainer)
-                l.Text = "There aren’t any twisteds in the elevator, silly!"
+                l.Text = "There aren’t any twisteds\nin the elevator, silly!"
                 l.TextColor3 = Color3.fromRGB(255, 100, 100)
                 l.BackgroundTransparency = 1
-                l.Size = UDim2.new(1, 0, 0, 15)
-                l.TextScaled = true -- Makes it fit in the box
+                l.Size = UDim2.new(1, 0, 0, 30) -- Increased height to accommodate 2 lines
+                l.TextWrapped = true
             end
 
             if Info and Info:FindFirstChild("Panic") and Info.Panic.Value == true then
