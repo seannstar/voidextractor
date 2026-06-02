@@ -19,11 +19,21 @@ Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 12)
 local Title = Instance.new("TextLabel", Frame)
 Title.Size = UDim2.new(1, 0, 0, 25)
 Title.Position = UDim2.new(0, 0, 0, 5)
-Title.Text = "Dandy’s World Autofarm V2 - made by seann"
+Title.Text = "sean's DW Autofarm"
 Title.TextColor3 = Color3.new(1,1,1)
 Title.BackgroundTransparency = 1
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 10
+
+-- Version Label
+local VersionLabel = Instance.new("TextLabel", Frame)
+VersionLabel.Size = UDim2.new(0, 60, 0, 15)
+VersionLabel.Position = UDim2.new(1, -70, 0, 5)
+VersionLabel.Text = "Version 0.1.0"
+VersionLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+VersionLabel.BackgroundTransparency = 1
+VersionLabel.Font = Enum.Font.Gotham
+VersionLabel.TextSize = 8
 
 -- Added Subtitle
 local Subtitle = Instance.new("TextLabel", Frame)
@@ -79,7 +89,7 @@ local SpotterPhrases = {
     "Looks like we’ve got spotted!\nLet’s hide, shall we?",
     "Not dealing with THAT twisted.",
     "Sigh.. we got spotted again.",
-    "Pretty cozy up in the void, is it not?\nStay up here, yeah?",
+    "Pretty cozy up in the void, is it not?",
     "hidehidehidehidehidehide",
     "You’re safe here."
 }
@@ -134,10 +144,22 @@ task.spawn(function()
             "i already know the autofarm doesn't pick up heals im gonna implement it eventually ok",
             "what, can't play the game normally? that's too bad..",
             "i'm scared.",
+            "ok",
             GetSpecialPhrase()
         }
         CyclerLabel.Text = phrases[math.random(1, #phrases)]
         task.wait(math.random(15, 20))
+    end
+end)
+
+-- Sprint Loop
+task.spawn(function()
+    while true do
+        if Enabled then
+            local event = game:GetService("ReplicatedStorage"):FindFirstChild("Events") and game.ReplicatedStorage.Events:FindFirstChild("SprintEvent")
+            if event then event:FireServer(true) end
+        end
+        task.wait(25)
     end
 end)
 
@@ -203,10 +225,9 @@ local function RunAutoFarm()
             -- 1. CRITICAL PRIORITY: Escape Logic
             if IsBeingChased() then
                 Log(SpotterPhrases[math.random(1, #SpotterPhrases)])
-                -- Multiple attempts to ensure extraction stops
                 for i=1, 3 do AbortExtractions() task.wait(0.1) end
                 workspace.Gravity = 0
-                SafeTeleport(CFrame.new(0, 10000, 0)) -- High void
+                SafeTeleport(CFrame.new(0, 10000, 0))
                 repeat task.wait(0.2) until not IsBeingChased()
                 task.wait(2)
                 workspace.Gravity = 196.2
@@ -309,8 +330,6 @@ Toggle.MouseButton1Click:Connect(function()
     if Enabled then RunAutoFarm() end
 end)
 
-
 loadstring(game:HttpGet("https://raw.githubusercontent.com/alihusam078588-web/Twilight-zone-loader/refs/heads/main/squirm.lua"))()
-
 
 loadstring(game:HttpGet("https://raw.githubusercontent.com/thatONEworldthatihate/afkshit/refs/heads/main/afk.lua"))()
