@@ -273,7 +273,7 @@ local function RunAutoFarm()
             
             for _, child in pairs(ListContainer:GetChildren()) do if not child:IsA("UIListLayout") then child:Destroy() end end
             
-            local foundMonsters = false
+             local foundMonsters = false
             if Room then
                 for _, map in pairs(Room:GetChildren()) do
                     local mFolder = map:FindFirstChild("Monsters")
@@ -290,6 +290,15 @@ local function RunAutoFarm()
                 end
             end
             
+            if not foundMonsters then
+                local l = Instance.new("TextLabel", ListContainer)
+                l.Text = "There aren’t any twisteds\nin the elevator, silly!"
+                l.TextColor3 = Color3.fromRGB(255, 100, 100)
+                l.BackgroundTransparency = 1
+                l.Size = UDim2.new(1, 0, 0, 30)
+                l.TextWrapped = true
+            end
+
             if Info and Info:FindFirstChild("Panic") and Info.Panic.Value == true then
                 Log("It's panic mode!\nTo the elevator we go...")
                 local elev = workspace:FindFirstChild("Elevators") and workspace.Elevators:FindFirstChild("Elevator")
