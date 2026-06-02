@@ -15,7 +15,6 @@ Frame.BackgroundTransparency = 0.2
 Frame.Active, Frame.Draggable = true, true
 Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 12)
 
--- Updated Title
 local Title = Instance.new("TextLabel", Frame)
 Title.Size = UDim2.new(1, 0, 0, 25)
 Title.Position = UDim2.new(0, 0, 0, 5)
@@ -25,7 +24,6 @@ Title.BackgroundTransparency = 1
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 10
 
--- Version Label
 local VersionLabel = Instance.new("TextLabel", Frame)
 VersionLabel.Size = UDim2.new(0, 60, 0, 15)
 VersionLabel.Position = UDim2.new(1, -70, 0, 5)
@@ -35,7 +33,6 @@ VersionLabel.BackgroundTransparency = 1
 VersionLabel.Font = Enum.Font.Code
 VersionLabel.TextSize = 8
 
--- Added Subtitle
 local Subtitle = Instance.new("TextLabel", Frame)
 Subtitle.Size = UDim2.new(1, 0, 0, 15)
 Subtitle.Position = UDim2.new(0, 0, 0, 20)
@@ -70,7 +67,6 @@ StatusLog.Text = "Status: Idle"
 StatusLog.TextColor3 = Color3.new(1,1,1)
 StatusLog.BackgroundTransparency = 1
 
--- Cycler UI
 local CyclerLabel = Instance.new("TextLabel", Frame)
 CyclerLabel.Size = UDim2.new(1, -20, 0, 30)
 CyclerLabel.Position = UDim2.new(0, 10, 0, 220)
@@ -85,7 +81,7 @@ local LocalPlayer = game.Players.LocalPlayer
 
 local function Log(msg) StatusLog.Text = tostring(msg) end
 
--- Inventory and Healing Helpers
+-- Inventory & Healing Helpers
 local function HasEmptySlot()
     local inv = workspace:FindFirstChild("InGamePlayers") and workspace.InGamePlayers:FindFirstChild(LocalPlayer.Name) and workspace.InGamePlayers[LocalPlayer.Name]:FindFirstChild("Inventory")
     if inv then
@@ -108,18 +104,18 @@ local function GetItemSlot(name)
     return nil
 end
 
-local function PerformHealing()
+local function HandleHealing()
     local char = LocalPlayer.Character
-    if not char then return end
-    local hum = char:FindFirstChild("Humanoid")
+    local hum = char and char:FindFirstChild("Humanoid")
     if not hum then return end
-    local health = hum.Health
-    local maxHealth = hum.MaxHealth
+    local health, maxHealth = hum.Health, hum.MaxHealth
     if health >= maxHealth or (maxHealth == 2 and health == 2) then return end
+    
     if health == 1 then
         local kit = GetItemSlot("HealthKit")
         if kit then game.ReplicatedStorage.Events.UseItem:FireServer(kit) return end
     end
+    
     if health <= 2 then
         local band = GetItemSlot("Bandage")
         if band then game.ReplicatedStorage.Events.UseItem:FireServer(band) end
@@ -164,13 +160,12 @@ end
 task.spawn(function()
     while true do
         local monster = GetRandomMonster()
-        local phrases = {"auto vote card coming in never", "you're gonna encounter twisted dandy a shit ton of times", "don't be disrespectful, go give Twisted " .. monster .. " a big hug.", "i already know the autofarm doesn't pick up heals im gonna implement it eventually ok", "what, can't play the game normally? that's too bad..", "i'm scared.", "ok", GetSpecialPhrase()}
+        local phrases = {"auto vote card coming in never", "you're gonna encounter twisted dandy a shit ton of times", "don't be disrespectful, go give Twisted " .. monster .. " a big hug.", "i'm scared.", "ok", GetSpecialPhrase()}
         CyclerLabel.Text = phrases[math.random(1, #phrases)]
         task.wait(math.random(15, 20))
     end
 end)
 
--- Sprint Loop
 task.spawn(function()
     while true do
         if Enabled then
@@ -188,9 +183,7 @@ local function IsDangerNear(pos)
         local mFolder = map:FindFirstChild("Monsters")
         if mFolder then
             for _, m in pairs(mFolder:GetChildren()) do
-                if not IgnoreList[m.Name] and m:FindFirstChild("HumanoidRootPart") and (m.HumanoidRootPart.Position - pos).Magnitude < 40 then
-                    return true
-                end
+                if not IgnoreList[m.Name] and m:FindFirstChild("HumanoidRootPart") and (m.HumanoidRootPart.Position - pos).Magnitude < 40 then return true end
             end
         end
     end
@@ -221,9 +214,7 @@ local function IsBeingChased()
             for _, m in pairs(mFolder:GetChildren()) do
                 if not IgnoreList[m.Name] then
                     local cv = m:FindFirstChild("ChasingValue")
-                    if cv and (cv.Value == LocalPlayer.Name or (cv:IsA("ObjectValue") and cv.Value and cv.Value.Name == LocalPlayer.Name)) then
-                        return true
-                    end
+                    if cv and (cv.Value == LocalPlayer.Name or (cv:IsA("ObjectValue") and cv.Value and cv.Value.Name == LocalPlayer.Name)) then return true end
                 end
             end
         end
@@ -232,9 +223,7 @@ local function IsBeingChased()
 end
 
 local function SafeTeleport(targetCFrame)
-    if (LocalPlayer.Character:GetPivot().Position - targetCFrame.Position).Magnitude > 5 then
-        LocalPlayer.Character:PivotTo(targetCFrame)
-    end
+    if (LocalPlayer.Character:GetPivot().Position - targetCFrame.Position).Magnitude > 5 then LocalPlayer.Character:PivotTo(targetCFrame) end
 end
 
 local function RunAutoFarm()
@@ -251,12 +240,10 @@ local function RunAutoFarm()
                 continue
             end
 
-            PerformHealing() -- Added Healing check
-
+            HandleHealing()
             local Room = workspace:FindFirstChild("CurrentRoom")
             local Info = workspace:FindFirstChild("Info")
             FloorLabel.Text = "Floor: " .. (Info and Info:FindFirstChild("Floor") and Info.Floor.Value or "?")
-            
             for _, child in pairs(ListContainer:GetChildren()) do if not child:IsA("UIListLayout") then child:Destroy() end end
             
             local foundMonsters = false
@@ -291,21 +278,20 @@ local function RunAutoFarm()
                 if elev and elev:FindFirstChild("Base") then SafeTeleport(elev.Base.CFrame) end
             elseif Room then
                 local collected = false
-                if IsBeingChased() then continue end
-                
                 for _, map in pairs(Room:GetChildren()) do
                     local items = map:FindFirstChild("Items")
                     if items then
                         for _, item in pairs(items:GetChildren()) do
-                            -- Item Pickup Logic
-                            local p = item:FindFirstChildWhichIsA("ProximityPrompt", true)
-                            if p and (item.Name == "ResearchCapsule" or (HasEmptySlot() and (item.Name == "HealthKit" or item.Name == "Bandage"))) then
-                                p.HoldDuration = 0
-                                SafeTeleport(CFrame.new(item:GetPivot().Position + Vector3.new(0, 3, 0)))
-                                fireproximityprompt(p)
-                                Log("Collecting " .. item.Name)
-                                collected = true
-                                task.wait(0.2)
+                            local isHeal = (item.Name == "HealthKit" or item.Name == "Bandage")
+                            if item.Name == "ResearchCapsule" or (isHeal and HasEmptySlot()) then
+                                local p = item:FindFirstChildWhichIsA("ProximityPrompt", true)
+                                if p then
+                                    p.HoldDuration = 0
+                                    SafeTeleport(CFrame.new(item:GetPivot().Position + Vector3.new(0, 3, 0)))
+                                    fireproximityprompt(p)
+                                    collected = true
+                                    Log("Collecting: " .. item.Name)
+                                end
                             end
                         end
                     end
@@ -318,9 +304,7 @@ local function RunAutoFarm()
                         if gens then
                             for _, g in pairs(gens:GetChildren()) do
                                 local p = g:FindFirstChildWhichIsA("ProximityPrompt", true)
-                                if p and p.Enabled and not IsDangerNear(g:GetPivot().Position) then
-                                    gen = g break 
-                                end
+                                if p and p.Enabled and not IsDangerNear(g:GetPivot().Position) then gen = g break end
                             end
                         end
                     end
