@@ -198,6 +198,18 @@ task.spawn(function()
     end
 end)
 
+-- Anti-Idle Logic
+task.spawn(function()
+    local VirtualInputManager = game:GetService("VirtualInputManager")
+    while true do
+        task.wait(900) -- 15 minutes (900 seconds)
+        local x = math.random(100, 500)
+        local y = math.random(100, 500)
+        VirtualInputManager:SendMouseButtonEvent(x, y, 0, true, game, 0)
+        VirtualInputManager:SendMouseButtonEvent(x, y, 0, false, game, 0)
+    end
+end)
+
 local function IsDangerNear(pos)
     local room = workspace:FindFirstChild("CurrentRoom")
     if not room then return false end
