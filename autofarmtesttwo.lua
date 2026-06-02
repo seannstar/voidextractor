@@ -89,9 +89,9 @@ local SpotterPhrases = {
     "Looks like we’ve got spotted!\nLet’s hide, shall we?",
     "Not dealing with THAT twisted.",
     "Sigh.. we got spotted again.",
-    "Pretty cozy up in the void, is it not?",
+    "Pretty cozy up in the void, isn't it?",
     "hidehidehidehidehidehide",
-    "You’re safe here."
+    "You’re safe here, don't worry."
 }
 
 local IgnoreList = {
@@ -179,6 +179,7 @@ task.spawn(function()
             "what, can't play the game normally? that's too bad..",
             "i'm scared.",
             "ok",
+            "hello!!1!1!!1",
             GetSpecialPhrase()
         }
         CyclerLabel.Text = phrases[math.random(1, #phrases)]
@@ -261,9 +262,9 @@ local function RunAutoFarm()
                 Log(SpotterPhrases[math.random(1, #SpotterPhrases)])
                 for i=1, 3 do AbortExtractions() task.wait(0.1) end
                 workspace.Gravity = 0
-                SafeTeleport(CFrame.new(0, 10000, 0))
+                SafeTeleport(CFrame.new(0, 99999, 0))
                 repeat task.wait(0.2) until not IsBeingChased()
-                task.wait(2)
+                task.wait(2.5)
                 workspace.Gravity = 196.2
                 continue
             end
@@ -347,7 +348,7 @@ local function RunAutoFarm()
                             Log("Extracting...")
                         end
                     else
-                        Log("Looking at the horizon\nof generators, be patient.")
+                        Log("Worry not, i'm searching for a safe machine to go to!")
                     end
                 end
             end
