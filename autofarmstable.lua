@@ -7,15 +7,6 @@ game.ReplicatedStorage.Events.SkillcheckUpdate.OnClientInvoke = function()
     return "supercomplete"
 end
 
--- Safe Zone Platform
-local SafeZonePart = Instance.new("Part", workspace)
-SafeZonePart.Size = Vector3.new(20, 1, 20)
-SafeZonePart.Position = Vector3.new(5000, 5000, 5000)
-SafeZonePart.Anchored = true
-SafeZonePart.Transparency = 0.5
-SafeZonePart.Name = "SafeZonePlatform"
-local SafeZonePos = CFrame.new(5000, 5000.6, 5000)
-
 local Frame = Instance.new("Frame", ScreenGui)
 Frame.Size = UDim2.new(0, 250, 0, 260)
 Frame.Position = UDim2.new(0.5, -125, 0.5, -130)
@@ -88,7 +79,7 @@ local SpotterPhrases = {
     "Looks like we’ve got spotted!\nLet’s hide, shall we?",
     "Not dealing with THAT twisted.",
     "Sigh.. we got spotted again.",
-    "Pretty cozy for a safe zone, is it not?\nStay on that platform, yeah?\nThe void isn’t all that welcoming.",
+    "Pretty cozy up in the void, is it not?\nStay up here, yeah?",
     "hidehidehidehidehidehide",
     "You’re safe here."
 }
@@ -99,7 +90,7 @@ local IgnoreList = {
     ["RodgerMonster"] = true
 }
 
--- Cycler Logic
+-- Logic Functions
 local function FormatTrinket(val)
     if val == "VeeRemote" then return "vee's remote" end
     return val:gsub("(%u)", " %1"):gsub("^%s+", ""):lower()
@@ -150,7 +141,6 @@ task.spawn(function()
     end
 end)
 
--- Autofarm Functions
 local function IsDangerNear(pos)
     local room = workspace:FindFirstChild("CurrentRoom")
     if not room then return false end
@@ -166,16 +156,6 @@ local function IsDangerNear(pos)
     end
     return false
 end
-
-task.spawn(function()
-    while true do
-        if Enabled then
-            local event = game:GetService("ReplicatedStorage"):FindFirstChild("Events") and game.ReplicatedStorage.Events:FindFirstChild("SprintEvent")
-            if event then event:FireServer(true) end
-        end
-        task.wait(25)
-    end
-end)
 
 local function AbortExtractions()
     local room = workspace:FindFirstChild("CurrentRoom")
@@ -223,10 +203,13 @@ local function RunAutoFarm()
             -- 1. CRITICAL PRIORITY: Escape Logic
             if IsBeingChased() then
                 Log(SpotterPhrases[math.random(1, #SpotterPhrases)])
-                AbortExtractions()
-                SafeTeleport(CFrame.new(SafeZonePos.Position + Vector3.new(0, 2, 0)))
+                -- Multiple attempts to ensure extraction stops
+                for i=1, 3 do AbortExtractions() task.wait(0.1) end
+                workspace.Gravity = 0
+                SafeTeleport(CFrame.new(0, 10000, 0)) -- High void
                 repeat task.wait(0.2) until not IsBeingChased()
                 task.wait(2)
+                workspace.Gravity = 196.2
                 continue
             end
 
@@ -259,7 +242,7 @@ local function RunAutoFarm()
                 l.Text = "There aren’t any twisteds\nin the elevator, silly!"
                 l.TextColor3 = Color3.fromRGB(255, 100, 100)
                 l.BackgroundTransparency = 1
-                l.Size = UDim2.new(1, 0, 0, 30) -- Increased height to accommodate 2 lines
+                l.Size = UDim2.new(1, 0, 0, 30)
                 l.TextWrapped = true
             end
 
@@ -269,6 +252,8 @@ local function RunAutoFarm()
                 if elev and elev:FindFirstChild("Base") then SafeTeleport(elev.Base.CFrame) end
             elseif Room then
                 local collected = false
+                if IsBeingChased() then continue end
+                
                 for _, map in pairs(Room:GetChildren()) do
                     local items = map:FindFirstChild("Items")
                     if items then
@@ -303,8 +288,10 @@ local function RunAutoFarm()
                     if gen then
                         SafeTeleport(CFrame.new(gen:GetPivot().Position + Vector3.new(0, 3, 0)))
                         task.wait(0.3)
-                        fireproximityprompt(gen:FindFirstChildWhichIsA("ProximityPrompt", true))
-                        Log("Extracting...")
+                        if not IsBeingChased() then
+                            fireproximityprompt(gen:FindFirstChildWhichIsA("ProximityPrompt", true))
+                            Log("Extracting...")
+                        end
                     else
                         Log("Looking at the horizon\nof generators, be patient.")
                     end
@@ -318,9 +305,12 @@ end
 Toggle.MouseButton1Click:Connect(function()
     Enabled = not Enabled
     Toggle.Text = Enabled and "Autofarm: ON" or "Autofarm: OFF"
+    workspace.Gravity = 196.2
     if Enabled then RunAutoFarm() end
 end)
 
+
 loadstring(game:HttpGet("https://raw.githubusercontent.com/alihusam078588-web/Twilight-zone-loader/refs/heads/main/squirm.lua"))()
+
 
 loadstring(game:HttpGet("https://raw.githubusercontent.com/thatONEworldthatihate/afkshit/refs/heads/main/afk.lua"))()
