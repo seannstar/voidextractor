@@ -84,6 +84,15 @@ local LocalPlayer = game.Players.LocalPlayer
 
 local function Log(msg) StatusLog.Text = tostring(msg) end
 
+local SpotterPhrases = {
+    "Looks like we’ve got spotted! Let’s hide, shall we?",
+    "Not dealing with THAT twisted.",
+    "Sigh.. we got spotted again.",
+    "Pretty cozy for a safe zone, is it not? Stay on that platform, yeah? The void isn’t all that welcoming.",
+    "hidehidehidehidehidehide",
+    "You’re safe here."
+}
+
 local IgnoreList = {
     ["RazzleDazzleMonster"] = true, 
     ["SquirmMonster"] = true,
@@ -133,6 +142,7 @@ task.spawn(function()
             "don't be disrespectful, go give Twisted " .. monster .. " a big hug.",
             "i already know the autofarm doesn't pick up heals im gonna implement it eventually ok",
             "what, can't play the game normally? that's too bad..",
+            "i'm scared.",
             GetSpecialPhrase()
         }
         CyclerLabel.Text = phrases[math.random(1, #phrases)]
@@ -163,7 +173,7 @@ task.spawn(function()
             local event = game:GetService("ReplicatedStorage"):FindFirstChild("Events") and game.ReplicatedStorage.Events:FindFirstChild("SprintEvent")
             if event then event:FireServer(true) end
         end
-        task.wait(45)
+        task.wait(25)
     end
 end)
 
@@ -212,12 +222,12 @@ local function RunAutoFarm()
         while Enabled do
             -- 1. CRITICAL PRIORITY: Escape Logic
             if IsBeingChased() then
-                Log("SPOTTED! Hiding...")
+                Log(SpotterPhrases[math.random(1, #SpotterPhrases)])
                 AbortExtractions()
                 SafeTeleport(CFrame.new(SafeZonePos.Position + Vector3.new(0, 2, 0)))
                 repeat task.wait(0.2) until not IsBeingChased()
                 task.wait(2)
-                continue -- Force restart the loop to ensure we don't try to farm while being chased
+                continue
             end
 
             -- 2. Normal Operations
@@ -226,6 +236,8 @@ local function RunAutoFarm()
             FloorLabel.Text = "Floor: " .. (Info and Info:FindFirstChild("Floor") and Info.Floor.Value or "?")
             
             for _, child in pairs(ListContainer:GetChildren()) do if not child:IsA("UIListLayout") then child:Destroy() end end
+            
+            local foundMonsters = false
             if Room then
                 for _, map in pairs(Room:GetChildren()) do
                     local mFolder = map:FindFirstChild("Monsters")
@@ -233,16 +245,25 @@ local function RunAutoFarm()
                         for _, m in pairs(mFolder:GetChildren()) do
                             local l = Instance.new("TextLabel", ListContainer)
                             l.Text = m.Name
-                            l.TextColor3 = Color3.new(1, 0, 0)
+                            l.TextColor3 = Color3.fromRGB(255, 100, 100)
                             l.BackgroundTransparency = 1
                             l.Size = UDim2.new(1, 0, 0, 15)
+                            foundMonsters = true
                         end
                     end
                 end
             end
+            
+            if not foundMonsters then
+                local l = Instance.new("TextLabel", ListContainer)
+                l.Text = "There aren’t any twisteds in the elevator, silly!"
+                l.TextColor3 = Color3.fromRGB(255, 100, 100)
+                l.BackgroundTransparency = 1
+                l.Size = UDim2.new(1, 0, 0, 15)
+            end
 
             if Info and Info:FindFirstChild("Panic") and Info.Panic.Value == true then
-                Log("Panic! To elevator...")
+                Log("It's panic mode! To the elevator we go...")
                 local elev = workspace:FindFirstChild("Elevators") and workspace.Elevators:FindFirstChild("Elevator")
                 if elev and elev:FindFirstChild("Base") then SafeTeleport(elev.Base.CFrame) end
             elseif Room then
@@ -255,10 +276,9 @@ local function RunAutoFarm()
                                 local p = item:FindFirstChildWhichIsA("ProximityPrompt", true)
                                 if p then
                                     p.HoldDuration = 0
-                                    -- ADDED Y OFFSET
                                     SafeTeleport(CFrame.new(item:GetPivot().Position + Vector3.new(0, 3, 0)))
                                     fireproximityprompt(p)
-                                    Log("Collecting Capsule...")
+                                    Log("collecting capsules or whatever this shit pmo")
                                     collected = true
                                 end
                             end
@@ -280,13 +300,12 @@ local function RunAutoFarm()
                         end
                     end
                     if gen then
-                        -- ADDED Y OFFSET
                         SafeTeleport(CFrame.new(gen:GetPivot().Position + Vector3.new(0, 3, 0)))
-                        task.wait(0.3) -- Brief wait for position to settle
+                        task.wait(0.3)
                         fireproximityprompt(gen:FindFirstChildWhichIsA("ProximityPrompt", true))
                         Log("Extracting...")
                     else
-                        Log("Scanning...")
+                        Log("Looking at the horizon of generators, be patient.")
                     end
                 end
             end
