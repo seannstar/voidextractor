@@ -94,47 +94,6 @@ local SpotterPhrases = {
     "You’re safe here."
 }
 
--- Inventory & Healing
-local function HasEmptySlot()
-    local inv = workspace:FindFirstChild("InGamePlayers") and workspace.InGamePlayers:FindFirstChild(LocalPlayer.Name) and workspace.InGamePlayers[LocalPlayer.Name]:FindFirstChild("Inventory")
-    if inv then
-        for i = 1, 3 do
-            local slot = inv:FindFirstChild("Slot" .. i)
-            if slot and slot.Value == "None" then return true end
-        end
-    end
-    return false
-end
-
-local function GetItemSlot(name)
-    local inv = workspace:FindFirstChild("InGamePlayers") and workspace.InGamePlayers:FindFirstChild(LocalPlayer.Name) and workspace.InGamePlayers[LocalPlayer.Name]:FindFirstChild("Inventory")
-    if inv then
-        for i = 1, 3 do
-            local slot = inv:FindFirstChild("Slot" .. i)
-            if slot and slot.Value == name then return slot.Name end
-        end
-    end
-    return nil
-end
-
-local function PerformHealing()
-    local char = LocalPlayer.Character
-    if not char then return end
-    local hum = char:FindFirstChild("Humanoid")
-    if not hum then return end
-    local health, maxHealth = hum.Health, hum.MaxHealth
-    if health >= maxHealth or (maxHealth == 2 and health == 2) then return end
-    if health == 1 then
-        local kitSlot = GetItemSlot("HealthKit")
-        if kitSlot then game.ReplicatedStorage.Events.UseItem:FireServer(kitSlot) return end
-    end
-    if health <= 2 then
-        local bandSlot = GetItemSlot("Bandage")
-        if bandSlot then game.ReplicatedStorage.Events.UseItem:FireServer(bandSlot) end
-    end
-end
-
--- ignore list for inactive twisteds
 local IgnoreList = {
     ["RazzleDazzleMonster"] = true, 
     ["SquirmMonster"] = true,
@@ -372,5 +331,4 @@ Toggle.MouseButton1Click:Connect(function()
 end)
 
 loadstring(game:HttpGet("https://raw.githubusercontent.com/alihusam078588-web/Twilight-zone-loader/refs/heads/main/squirm.lua"))()
-
 loadstring(game:HttpGet("https://raw.githubusercontent.com/thatONEworldthatihate/afkshit/refs/heads/main/afk.lua"))()
