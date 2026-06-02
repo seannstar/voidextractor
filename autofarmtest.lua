@@ -85,10 +85,10 @@ local LocalPlayer = game.Players.LocalPlayer
 local function Log(msg) StatusLog.Text = tostring(msg) end
 
 local SpotterPhrases = {
-    "Looks like we’ve got spotted! Let’s hide, shall we?",
+    "Looks like we’ve got spotted!\nLet’s hide, shall we?",
     "Not dealing with THAT twisted.",
     "Sigh.. we got spotted again.",
-    "Pretty cozy for a safe zone, is it not? Stay on that platform, yeah? The void isn’t all that welcoming.",
+    "Pretty cozy for a safe zone, is it not?\nStay on that platform, yeah?\nThe void isn’t all that welcoming.",
     "hidehidehidehidehidehide",
     "You’re safe here."
 }
@@ -260,10 +260,11 @@ local function RunAutoFarm()
                 l.TextColor3 = Color3.fromRGB(255, 100, 100)
                 l.BackgroundTransparency = 1
                 l.Size = UDim2.new(1, 0, 0, 15)
+                l.TextScaled = true -- Makes it fit in the box
             end
 
             if Info and Info:FindFirstChild("Panic") and Info.Panic.Value == true then
-                Log("It's panic mode! To the elevator we go...")
+                Log("It's panic mode!\nTo the elevator we go...")
                 local elev = workspace:FindFirstChild("Elevators") and workspace.Elevators:FindFirstChild("Elevator")
                 if elev and elev:FindFirstChild("Base") then SafeTeleport(elev.Base.CFrame) end
             elseif Room then
@@ -278,7 +279,7 @@ local function RunAutoFarm()
                                     p.HoldDuration = 0
                                     SafeTeleport(CFrame.new(item:GetPivot().Position + Vector3.new(0, 3, 0)))
                                     fireproximityprompt(p)
-                                    Log("collecting capsules or whatever this shit pmo")
+                                    Log("Collecting capsules\nor whatever this shit pmo")
                                     collected = true
                                 end
                             end
@@ -305,7 +306,7 @@ local function RunAutoFarm()
                         fireproximityprompt(gen:FindFirstChildWhichIsA("ProximityPrompt", true))
                         Log("Extracting...")
                     else
-                        Log("Looking at the horizon of generators, be patient.")
+                        Log("Looking at the horizon\nof generators, be patient.")
                     end
                 end
             end
