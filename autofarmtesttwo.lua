@@ -97,6 +97,7 @@ local SpotterPhrases = {
 local IgnoreList = {
     ["RazzleDazzleMonster"] = true, 
     ["SquirmMonster"] = true,
+    ["BlottMonster"] = true,
     ["RodgerMonster"] = true
 }
 
