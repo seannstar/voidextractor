@@ -160,9 +160,19 @@ end
 task.spawn(function()
     while true do
         local monster = GetRandomMonster()
-        local phrases = {"auto vote card coming in never", "you're gonna encounter twisted dandy a shit ton of times", "go give Twisted " .. monster .. " a big hug, they need it.", "i'm scared.", "ok", GetSpecialPhrase()}
+        local phrases = {
+            "auto vote card coming in never",
+            "you're gonna encounter twisted dandy a shit ton of times",
+            "go give Twisted " .. monster .. " a big hug, they need it.",
+            "i'm scared.",
+            "ok",
+            "hi",
+            "???? why????? wh y????",
+            GetSpecialPhrase()
+        }
+        
         CyclerLabel.Text = phrases[math.random(1, #phrases)]
-        task.wait(math.random(15, 20))
+        task.wait(math.random(15))
     end
 end)
 
