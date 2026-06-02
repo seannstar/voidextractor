@@ -277,7 +277,6 @@ local function RunAutoFarm()
                 SafeTeleport(CFrame.new(0, 99999, 0))
                 repeat task.wait(0.2) until not IsBeingChased()
                 task.wait(2.5)
-                workspace.Gravity = 196.2
                 continue
             end
 
@@ -359,7 +358,7 @@ local function RunAutoFarm()
                             Log("Extracting...")
                         end
                     else
-                        Log("Worry not, i'm searching for a safe machine to go to!")
+                        Log("Worry not, i'm searching\nfor a safe machine to go to!")
                     end
                 end
             end
