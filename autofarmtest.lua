@@ -319,4 +319,4 @@ Toggle.MouseButton1Click:Connect(function()
     Enabled = not Enabled
     Toggle.Text = Enabled and "Autofarm: ON" or "Autofarm: OFF"
     if Enabled then RunAutoFarm() end
-end)
+end) by
