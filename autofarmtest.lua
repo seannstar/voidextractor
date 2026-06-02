@@ -70,6 +70,7 @@ StatusLog.Text = "Status: Idle"
 StatusLog.TextColor3 = Color3.new(1,1,1)
 StatusLog.BackgroundTransparency = 1
 
+-- Cycler UI
 local CyclerLabel = Instance.new("TextLabel", Frame)
 CyclerLabel.Size = UDim2.new(1, -20, 0, 30)
 CyclerLabel.Position = UDim2.new(0, 10, 0, 220)
@@ -81,10 +82,57 @@ CyclerLabel.TextWrapped = true
 
 local Enabled = false
 local LocalPlayer = game.Players.LocalPlayer
-
 local function Log(msg) StatusLog.Text = tostring(msg) end
 
--- Inventory & Healing Logic
+-- Logic Functions & Config
+local SpotterPhrases = {"Looks like we’ve got spotted!\nLet’s hide, shall we?", "Not dealing with THAT twisted.", "Sigh.. we got spotted again.", "Pretty cozy up in the void, is it not?", "hidehidehidehidehidehide", "You’re safe here."}
+local IgnoreList = {["RazzleDazzleMonster"] = true, ["SquirmMonster"] = true, ["RodgerMonster"] = true}
+
+local function FormatTrinket(val)
+    if val == "VeeRemote" then return "vee's remote" end
+    return val:gsub("(%u)", " %1"):gsub("^%s+", ""):lower()
+end
+
+local function GetSpecialPhrase()
+    local playerFolder = workspace:FindFirstChild("InGamePlayers") and workspace.InGamePlayers:FindFirstChild(LocalPlayer.Name)
+    local charName = (playerFolder and playerFolder:FindFirstChild("Config") and playerFolder.Config:FindFirstChild("CharacterName")) and playerFolder.Config.CharacterName.Value or "unknown"
+    local t1 = (playerFolder and playerFolder:FindFirstChild("Trinkets") and playerFolder.Trinkets:FindFirstChild("Trinket1")) and FormatTrinket(playerFolder.Trinkets.Trinket1.Value) or "nothing"
+    local t2 = (playerFolder and playerFolder:FindFirstChild("Trinkets") and playerFolder.Trinkets:FindFirstChild("Trinket2")) and FormatTrinket(playerFolder.Trinkets.Trinket2.Value) or "nothing"
+    local formattedChar = charName:gsub("(%u)", " %1"):gsub("^%s+", ""):lower()
+    return "never thought i'd see a " .. formattedChar .. " with " .. t1 .. " and " .. t2 .. " using my autofarm.. oh well!"
+end
+
+local function GetRandomMonster()
+    local room = workspace:FindFirstChild("CurrentRoom")
+    if room then
+        local monsters = {}
+        for _, map in pairs(room:GetChildren()) do
+            local mFolder = map:FindFirstChild("Monsters")
+            if mFolder then
+                for _, m in pairs(mFolder:GetChildren()) do
+                    table.insert(monsters, m.Name:gsub("Monster", ""))
+                end
+            end
+        end
+        if #monsters > 0 then return monsters[math.random(1, #monsters)] end
+    end
+    return "Twisted"
+end
+
+-- PHRASE LIST: Add new lines here
+local CyclerPhrases = {
+    "auto vote card coming in never",
+    "you're gonna encounter twisted dandy a shit ton of times",
+    "don't be disrespectful, go give Twisted " .. GetRandomMonster() .. " a big hug.",
+    "making the autofarm pick up items sure was something",
+    "what, can't play the game normally? that's too bad..",
+    "i'm scared.",
+    "ok",
+    "im tired can we stop now",
+    GetSpecialPhrase()
+}
+
+-- Inventory & Healing
 local function HasEmptySlot()
     local inv = workspace:FindFirstChild("InGamePlayers") and workspace.InGamePlayers:FindFirstChild(LocalPlayer.Name) and workspace.InGamePlayers[LocalPlayer.Name]:FindFirstChild("Inventory")
     if inv then
@@ -112,49 +160,19 @@ local function PerformHealing()
     if not char then return end
     local hum = char:FindFirstChild("Humanoid")
     if not hum then return end
-    
-    local health = hum.Health
-    local maxHealth = hum.MaxHealth
-    
+    local health, maxHealth = hum.Health, hum.MaxHealth
     if health >= maxHealth or (maxHealth == 2 and health == 2) then return end
-    
     if health == 1 then
         local kitSlot = GetItemSlot("HealthKit")
-        if kitSlot then
-            game.ReplicatedStorage.Events.UseItem:FireServer(kitSlot)
-            return
-        end
+        if kitSlot then game.ReplicatedStorage.Events.UseItem:FireServer(kitSlot) return end
     end
-    
     if health <= 2 then
         local bandSlot = GetItemSlot("Bandage")
-        if bandSlot then
-            game.ReplicatedStorage.Events.UseItem:FireServer(bandSlot)
-        end
+        if bandSlot then game.ReplicatedStorage.Events.UseItem:FireServer(bandSlot) end
     end
 end
 
--- Logic Functions (Keep Existing)
-local SpotterPhrases = {"Looks like we’ve got spotted!\nLet’s hide, shall we?", "Not dealing with THAT twisted.", "Sigh.. we got spotted again.", "Pretty cozy up in the void, is it not?", "hidehidehidehidehidehide", "You’re safe here."}
-local IgnoreList = {["RazzleDazzleMonster"] = true, ["SquirmMonster"] = true, ["RodgerMonster"] = true}
-
-local function GetRandomMonster()
-    local room = workspace:FindFirstChild("CurrentRoom")
-    if room then
-        local monsters = {}
-        for _, map in pairs(room:GetChildren()) do
-            local mFolder = map:FindFirstChild("Monsters")
-            if mFolder then
-                for _, m in pairs(mFolder:GetChildren()) do
-                    table.insert(monsters, m.Name:gsub("Monster", ""))
-                end
-            end
-        end
-        if #monsters > 0 then return monsters[math.random(1, #monsters)] end
-    end
-    return "Twisted"
-end
-
+-- Utilities
 local function IsBeingChased()
     local room = workspace:FindFirstChild("CurrentRoom")
     if not room then return false end
@@ -164,9 +182,7 @@ local function IsBeingChased()
             for _, m in pairs(mFolder:GetChildren()) do
                 if not IgnoreList[m.Name] then
                     local cv = m:FindFirstChild("ChasingValue")
-                    if cv and (cv.Value == LocalPlayer.Name or (cv:IsA("ObjectValue") and cv.Value and cv.Value.Name == LocalPlayer.Name)) then
-                        return true
-                    end
+                    if cv and (cv.Value == LocalPlayer.Name or (cv:IsA("ObjectValue") and cv.Value and cv.Value.Name == LocalPlayer.Name)) then return true end
                 end
             end
         end
@@ -190,9 +206,7 @@ local function AbortExtractions()
 end
 
 local function SafeTeleport(targetCFrame)
-    if (LocalPlayer.Character:GetPivot().Position - targetCFrame.Position).Magnitude > 5 then
-        LocalPlayer.Character:PivotTo(targetCFrame)
-    end
+    if (LocalPlayer.Character:GetPivot().Position - targetCFrame.Position).Magnitude > 5 then LocalPlayer.Character:PivotTo(targetCFrame) end
 end
 
 local function IsDangerNear(pos)
@@ -202,16 +216,14 @@ local function IsDangerNear(pos)
         local mFolder = map:FindFirstChild("Monsters")
         if mFolder then
             for _, m in pairs(mFolder:GetChildren()) do
-                if not IgnoreList[m.Name] and m:FindFirstChild("HumanoidRootPart") and (m.HumanoidRootPart.Position - pos).Magnitude < 40 then
-                    return true
-                end
+                if not IgnoreList[m.Name] and m:FindFirstChild("HumanoidRootPart") and (m.HumanoidRootPart.Position - pos).Magnitude < 40 then return true end
             end
         end
     end
     return false
 end
 
--- Sprint and Cycler Spawns
+-- Loops
 task.spawn(function()
     while true do
         if Enabled then
@@ -224,9 +236,7 @@ end)
 
 task.spawn(function()
     while true do
-        local monster = GetRandomMonster()
-        local phrases = {"auto vote card coming in never", "you're gonna encounter twisted dandy a shit ton of times", "don't be disrespectful, go give Twisted " .. monster .. " a big hug.", "i'm scared.", "ok"}
-        CyclerLabel.Text = phrases[math.random(1, #phrases)]
+        CyclerLabel.Text = CyclerPhrases[math.random(1, #CyclerPhrases)]
         task.wait(math.random(15, 20))
     end
 end)
@@ -244,9 +254,7 @@ local function RunAutoFarm()
                 workspace.Gravity = 196.2
                 continue
             end
-
             PerformHealing()
-
             local Room = workspace:FindFirstChild("CurrentRoom")
             if Room then
                 local collected = false
@@ -256,7 +264,6 @@ local function RunAutoFarm()
                         for _, item in pairs(items:GetChildren()) do
                             local p = item:FindFirstChildWhichIsA("ProximityPrompt", true)
                             if p then
-                                -- Capsule pickup or Healing item pickup if space exists
                                 if item.Name == "ResearchCapsule" or (HasEmptySlot() and (item.Name == "HealthKit" or item.Name == "Bandage")) then
                                     p.HoldDuration = 0
                                     SafeTeleport(CFrame.new(item:GetPivot().Position + Vector3.new(0, 3, 0)))
@@ -268,7 +275,6 @@ local function RunAutoFarm()
                         end
                     end
                 end
-
                 if not collected then
                     local gen = nil
                     for _, map in pairs(Room:GetChildren()) do
@@ -276,19 +282,14 @@ local function RunAutoFarm()
                         if gens then
                             for _, g in gens:GetChildren() do
                                 local p = g:FindFirstChildWhichIsA("ProximityPrompt", true)
-                                if p and p.Enabled and not IsDangerNear(g:GetPivot().Position) then
-                                    gen = g break 
-                                end
+                                if p and p.Enabled and not IsDangerNear(g:GetPivot().Position) then gen = g break end
                             end
                         end
                     end
                     if gen then
                         SafeTeleport(CFrame.new(gen:GetPivot().Position + Vector3.new(0, 3, 0)))
                         task.wait(0.3)
-                        if not IsBeingChased() then
-                            fireproximityprompt(gen:FindFirstChildWhichIsA("ProximityPrompt", true))
-                            Log("Extracting...")
-                        end
+                        if not IsBeingChased() then fireproximityprompt(gen:FindFirstChildWhichIsA("ProximityPrompt", true)) Log("Extracting...") end
                     end
                 end
             end
