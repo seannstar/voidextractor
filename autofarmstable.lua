@@ -32,7 +32,7 @@ VersionLabel.Position = UDim2.new(1, -70, 0, 5)
 VersionLabel.Text = "Version 0.1.0"
 VersionLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
 VersionLabel.BackgroundTransparency = 1
-VersionLabel.Font = Enum.Font.Gotham
+VersionLabel.Font = Enum.Font.Code
 VersionLabel.TextSize = 8
 
 -- Added Subtitle
