@@ -210,6 +210,17 @@ end
 local function RunAutoFarm()
     task.spawn(function()
         while Enabled do
+            -- 1. CRITICAL PRIORITY: Escape Logic
+            if IsBeingChased() then
+                Log("SPOTTED! Hiding...")
+                AbortExtractions()
+                SafeTeleport(CFrame.new(SafeZonePos.Position + Vector3.new(0, 2, 0)))
+                repeat task.wait(0.2) until not IsBeingChased()
+                task.wait(2)
+                continue -- Force restart the loop to ensure we don't try to farm while being chased
+            end
+
+            -- 2. Normal Operations
             local Room = workspace:FindFirstChild("CurrentRoom")
             local Info = workspace:FindFirstChild("Info")
             FloorLabel.Text = "Floor: " .. (Info and Info:FindFirstChild("Floor") and Info.Floor.Value or "?")
@@ -230,13 +241,7 @@ local function RunAutoFarm()
                 end
             end
 
-            if IsBeingChased() then
-                Log("SPOTTED! Hiding...")
-                AbortExtractions()
-                SafeTeleport(SafeZonePos)
-                repeat task.wait(0.2) until not IsBeingChased()
-                task.wait(5)
-            elseif Info and Info:FindFirstChild("Panic") and Info.Panic.Value == true then
+            if Info and Info:FindFirstChild("Panic") and Info.Panic.Value == true then
                 Log("Panic! To elevator...")
                 local elev = workspace:FindFirstChild("Elevators") and workspace.Elevators:FindFirstChild("Elevator")
                 if elev and elev:FindFirstChild("Base") then SafeTeleport(elev.Base.CFrame) end
@@ -250,7 +255,8 @@ local function RunAutoFarm()
                                 local p = item:FindFirstChildWhichIsA("ProximityPrompt", true)
                                 if p then
                                     p.HoldDuration = 0
-                                    SafeTeleport(item:GetPivot() + Vector3.new(0, 1, 0))
+                                    -- ADDED Y OFFSET
+                                    SafeTeleport(CFrame.new(item:GetPivot().Position + Vector3.new(0, 3, 0)))
                                     fireproximityprompt(p)
                                     Log("Collecting Capsule...")
                                     collected = true
@@ -274,7 +280,9 @@ local function RunAutoFarm()
                         end
                     end
                     if gen then
-                        SafeTeleport(gen:GetPivot())
+                        -- ADDED Y OFFSET
+                        SafeTeleport(CFrame.new(gen:GetPivot().Position + Vector3.new(0, 3, 0)))
+                        task.wait(0.3) -- Brief wait for position to settle
                         fireproximityprompt(gen:FindFirstChildWhichIsA("ProximityPrompt", true))
                         Log("Extracting...")
                     else
