@@ -276,7 +276,7 @@ local function RunAutoFarm()
             if IsBeingChased() then
                 Log(SpotterPhrases[math.random(1, #SpotterPhrases)])
                 for i=1, 3 do AbortExtractions() task.wait(0.1) end
-                SafeTeleport(CFrame.new(0, 99999, 0))
+                SafeTeleport(CFrame.new(0, 10000, 0))
                 repeat task.wait(0.2) until not IsBeingChased()
                 task.wait(2.5)
                 continue
