@@ -183,6 +183,11 @@ task.spawn(function()
             "i'm scared.",
             "ok",
             "hello!!1!1!!1",
+            "i have no idea what to put here",
+            "the rec room shutdown was pretty sad but the tiktok videos made it 10 times sadder i am IN TEARS",
+            "im being fr im genuinely out of ideas for these stupid texts",
+            "baldi's basics is peak",
+            "don't let the handlers know you're doing this or whatever",
             GetSpecialPhrase()
         }
         CyclerLabel.Text = phrases[math.random(1, #phrases)]
@@ -360,7 +365,7 @@ local function RunAutoFarm()
                             Log("Extracting...")
                         end
                     else
-                        Log("Worry not, i'm searching\nfor a safe machine to go to!")
+                        Log("Just looking for stuff, don't worry.")
                     end
                 end
             end
